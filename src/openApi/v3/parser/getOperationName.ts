@@ -9,6 +9,7 @@ export function getOperationName(value: string): string {
     const clean = value
         .replace(/^[^a-zA-Z]+/g, '')
         .replace(/[^\w\-]+/g, '-')
+        .replace(/_?\d+$/, '')
         .trim();
     return camelCase(clean);
 }

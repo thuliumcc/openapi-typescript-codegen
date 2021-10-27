@@ -5,7 +5,6 @@
 import type { {{{this}}} } from '../models/{{{this}}}';
 {{/each}}
 {{/if}}
-import type { CancelablePromise } from '../core/CancelablePromise';
 import { request as __request } from '../core/request';
 {{#if @root.useVersion}}
 import { OpenAPI } from '../core/OpenAPI';
@@ -14,30 +13,8 @@ import { OpenAPI } from '../core/OpenAPI';
 export class {{{name}}} {
 
     {{#each operations}}
-    /**
-    {{#if deprecated}}
-     * @deprecated
-    {{/if}}
-    {{#if summary}}
-     * {{{summary}}}
-    {{/if}}
-    {{#if description}}
-     * {{{description}}}
-    {{/if}}
-    {{#unless @root.useOptions}}
-    {{#if parameters}}
-    {{#each parameters}}
-     * @param {{{name}}} {{{description}}}
-    {{/each}}
-    {{/if}}
-    {{/unless}}
-    {{#each results}}
-     * @returns {{{type}}} {{{description}}}
-    {{/each}}
-     * @throws ApiError
-     */
-    public static {{{name}}}({{>parameters}}): CancelablePromise<{{>result}}> {
-        return __request({
+    public static {{{name}}}({{>parameters}}) {
+        return __request<{{>result}}>({
             method: '{{{method}}}',
             path: `{{{path}}}`,
             {{#if parametersCookie}}
