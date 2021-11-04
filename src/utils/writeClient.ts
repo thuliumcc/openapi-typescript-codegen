@@ -6,7 +6,6 @@ import { mkdir, rmdir } from './fileSystem';
 import { isSubDirectory } from './isSubdirectory';
 import { Templates } from './registerHandlebarTemplates';
 import { writeClientCore } from './writeClientCore';
-import { writeClientIndex } from './writeClientIndex';
 import { writeClientModels } from './writeClientModels';
 import { writeClientSchemas } from './writeClientSchemas';
 import { writeClientServices } from './writeClientServices';
@@ -72,8 +71,9 @@ export async function writeClient(
         await writeClientModels(client.models, templates, outputPathModels, httpClient, useUnionTypes);
     }
 
-    if (exportCore || exportServices || exportSchemas || exportModels) {
+    // We do not need index.ts
+    /*if (exportCore || exportServices || exportSchemas || exportModels) {
         await mkdir(outputPath);
         await writeClientIndex(client, templates, outputPath, useUnionTypes, exportCore, exportServices, exportModels, exportSchemas);
-    }
+    }*/
 }
