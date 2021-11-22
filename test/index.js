@@ -1,11 +1,12 @@
 'use strict';
 
 const OpenAPI = require('../dist');
+const fetch = require('node-fetch');
 
-async function generateV2() {
+async function generate(input, output) {
     await OpenAPI.generate({
-        input: './test/spec/v2.json',
-        output: './test/generated/v2/',
+        input,
+        output,
         httpClient: OpenAPI.HttpClient.FETCH,
         useOptions: false,
         useUnionTypes: false,
@@ -13,28 +14,49 @@ async function generateV2() {
         exportSchemas: true,
         exportModels: true,
         exportServices: true,
+        // postfix: 'Api',
         // request: './test/custom/request.ts',
     });
 }
 
-async function generateV3() {
-    await OpenAPI.generate({
-        input: './test/spec/v3.json',
-        output: './test/generated/v3/',
-        httpClient: OpenAPI.HttpClient.FETCH,
-        useOptions: false,
-        useUnionTypes: false,
-        exportCore: true,
-        exportSchemas: true,
-        exportModels: true,
-        exportServices: true,
-        // request: './test/custom/request.ts',
+async function generateRealWorldSpecs() {
+    const response = await fetch('https://api.apis.guru/v2/list.json');
+
+    const list = await response.json();
+    delete list['api.video'];
+    delete list['apideck.com:vault'];
+    delete list['amazonaws.com:mediaconvert'];
+    delete list['bungie.net'];
+    delete list['docusign.net'];
+    delete list['googleapis.com:adsense'];
+    delete list['googleapis.com:servicebroker'];
+    delete list['kubernetes.io'];
+    delete list['microsoft.com:graph'];
+    delete list['presalytics.io:ooxml'];
+    delete list['stripe.com'];
+
+    const specs = Object.entries(list).map(([name, api]) => {
+        const latestVersion = api.versions[api.preferred];
+        return {
+            name: name
+                .replace(/^[^a-zA-Z]+/g, '')
+                .replace(/[^\w\-]+/g, '-')
+                .trim()
+                .toLowerCase(),
+            url: latestVersion.swaggerYamlUrl || latestVersion.swaggerUrl,
+        };
     });
+
+    for (let i = 0; i < specs.length; i++) {
+        const spec = specs[i];
+        await generate(spec.url, `./test/generated/${spec.name}/`);
+    }
 }
 
-async function generate() {
-    await generateV2();
-    await generateV3();
+async function main() {
+    await generate('./test/spec/v2.json', './test/generated/v2/');
+    await generate('./test/spec/v3.json', './test/generated/v3/');
+    // await generateRealWorldSpecs();
 }
 
-generate();
+main();

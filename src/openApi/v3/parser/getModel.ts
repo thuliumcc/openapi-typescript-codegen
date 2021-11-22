@@ -11,7 +11,12 @@ import { getModelDefault } from './getModelDefault';
 import { getModelProperties } from './getModelProperties';
 import { getType } from './getType';
 
-export function getModel(openApi: OpenApi, definition: OpenApiSchema, isDefinition: boolean = false, name: string = ''): Model {
+export function getModel(
+    openApi: OpenApi,
+    definition: OpenApiSchema,
+    isDefinition: boolean = false,
+    name: string = ''
+): Model {
     const model: Model = {
         name,
         export: 'interface',
@@ -175,7 +180,7 @@ export function getModel(openApi: OpenApi, definition: OpenApiSchema, isDefiniti
 
     // If the schema has a type than it can be a basic or generic type.
     if (definition.type) {
-        const definitionType = getType(definition.type);
+        const definitionType = getType(definition.type, definition.format);
         model.export = 'generic';
         model.type = definitionType.type;
         model.base = definitionType.base;

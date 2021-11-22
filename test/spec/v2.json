@@ -347,24 +347,28 @@
         "/api/v{api-version}/duplicate": {
             "get": {
                 "tags": [
+                    "Duplicate",
                     "Duplicate"
                 ],
                 "operationId": "DuplicateName"
             },
             "post": {
                 "tags": [
+                    "Duplicate",
                     "Duplicate"
                 ],
                 "operationId": "DuplicateName"
             },
             "put": {
                 "tags": [
+                    "Duplicate",
                     "Duplicate"
                 ],
                 "operationId": "DuplicateName"
             },
             "delete": {
                 "tags": [
+                    "Duplicate",
                     "Duplicate"
                 ],
                 "operationId": "DuplicateName"
@@ -376,6 +380,35 @@
                     "NoContent"
                 ],
                 "operationId": "CallWithNoContentResponse",
+                "responses": {
+                    "204": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v{api-version}/multiple-tags/a": {
+            "get": {
+                "tags": [
+                    "MultipleTags1",
+                    "MultipleTags2"
+                ],
+                "operationId": "DummyA",
+                "responses": {
+                    "204": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v{api-version}/multiple-tags/b": {
+            "get": {
+                "tags": [
+                    "MultipleTags1",
+                    "MultipleTags2",
+                    "MultipleTags3"
+                ],
+                "operationId": "DummyB",
                 "responses": {
                     "204": {
                         "description": "Success"
@@ -766,6 +799,40 @@
                     },
                     "500": {
                         "description": "500 server error"
+                    }
+                }
+            }
+        },
+        "/api/v{api-version}/error": {
+            "post": {
+                "tags": [
+                    "Error"
+                ],
+                "operationId": "testErrorCode",
+                "parameters": [
+                    {
+                        "description": "Status code to return",
+                        "name": "status",
+                        "in": "query",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Custom message: Successful response"
+                    },
+                    "500": {
+                        "description": "Custom message: Internal Server Error"
+                    },
+                    "501": {
+                        "description": "Custom message: Not Implemented"
+                    },
+                    "502": {
+                        "description": "Custom message: Bad Gateway"
+                    },
+                    "503": {
+                        "description": "Custom message: Service Unavailable"
                     }
                 }
             }

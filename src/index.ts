@@ -20,6 +20,7 @@ export type Options = {
     exportServices?: boolean;
     exportModels?: boolean;
     exportSchemas?: boolean;
+    postfix?: string;
     request?: string;
     write?: boolean;
 };
@@ -37,6 +38,7 @@ export type Options = {
  * @param exportServices: Generate services
  * @param exportModels: Generate models
  * @param exportSchemas: Generate schemas
+ * @param postfix: Service name postfix
  * @param request: Path to custom request file
  * @param write Write the files to disk (true or false)
  */
@@ -50,6 +52,7 @@ export async function generate({
     exportServices = true,
     exportModels = true,
     exportSchemas = false,
+    postfix = 'Service',
     request,
     write = true,
 }: Options): Promise<void> {
@@ -66,7 +69,20 @@ export async function generate({
             const client = parseV2(openApi);
             const clientFinal = postProcessClient(client);
             if (!write) break;
-            await writeClient(clientFinal, templates, output, httpClient, useOptions, useUnionTypes, exportCore, exportServices, exportModels, exportSchemas, request);
+            await writeClient(
+                clientFinal,
+                templates,
+                output,
+                httpClient,
+                useOptions,
+                useUnionTypes,
+                exportCore,
+                exportServices,
+                exportModels,
+                exportSchemas,
+                postfix,
+                request
+            );
             break;
         }
 
@@ -74,7 +90,20 @@ export async function generate({
             const client = parseV3(openApi);
             const clientFinal = postProcessClient(client);
             if (!write) break;
-            await writeClient(clientFinal, templates, output, httpClient, useOptions, useUnionTypes, exportCore, exportServices, exportModels, exportSchemas, request);
+            await writeClient(
+                clientFinal,
+                templates,
+                output,
+                httpClient,
+                useOptions,
+                useUnionTypes,
+                exportCore,
+                exportServices,
+                exportModels,
+                exportSchemas,
+                postfix,
+                request
+            );
             break;
         }
     }

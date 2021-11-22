@@ -12,9 +12,9 @@
 
 ## Why?
 - Frontend ❤️ OpenAPI, but we do not want to use JAVA codegen in our builds
-- Quick, lightweight, robust and framework agnostic 🚀
+- Quick, lightweight, robust and framework-agnostic 🚀
 - Supports generation of TypeScript clients
-- Supports generations of fetch, XHR and Axios http clients
+- Supports generations of Fetch, [Node-Fetch](#node-fetch-support), [Axios](#axios-support) and XHR http clients
 - Supports OpenAPI specification v2.0 and v3.0
 - Supports JSON and YAML files for input
 - Supports generation through CLI, Node.js and NPX
@@ -47,6 +47,7 @@ $ openapi --help
     --exportServices <value>  Write services to disk (default: true)
     --exportModels <value>    Write models to disk (default: true)
     --exportSchemas <value>   Write schemas to disk (default: false)
+    --postfix <value>         Service name postfix (default: "Service")
     --request <value>         Path to custom request file
     -h, --help                display help for command
 
@@ -256,7 +257,7 @@ export const $MyModel = {
             format: 'date-time',
         },
     },
-};
+} as const;
 ```
 
 These runtime object are prefixed with a `$` character and expose all the interesting attributes of a model
@@ -444,35 +445,49 @@ module.exports = {
 };
 ```
 
+### Axios support
+This tool allows you to generate a client based on the [`axios`](https://www.npmjs.com/package/axios) client.
+The advantage of the Axios client is that it works in both NodeJS and Browser based environments.
+If you want to generate the Axios based client then you can specify `--client axios` in the openapi call:
 
-### Node.js support
-> Since version 3.x [`node-fetch`](https://www.npmjs.com/package/node-fetch) switched to ESM only, breaking many
-> CommonJS based toolchains (like Jest). Right now we do not support this new version!
+`openapi --input ./spec.json --output ./dist --client axios`
 
-By default, this library will generate a client that is compatible with the (browser based) [fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API),
-however this client will not work inside the Node.js environment. If you want to generate a Node.js compatible client then
-you can specify `--client node` in the openapi call:
-
-`openapi --input ./spec.json --output ./dist --client node`
-
-This will generate a client that uses [`node-fetch`](https://www.npmjs.com/package/node-fetch) internally. However,
-in order to compile and run this client, you might need to install the `node-fetch@2.x` dependencies:
+The only downside is that this client needs some additional dependencies to work (due to the missing Blob and FormData
+classes in NodeJS).
 
 ```
-npm install @types/node-fetch --save-dev
-npm install abort-controller --save-dev
-npm install node-fetch --save-dev
-npm install form-data --save-dev
+npm install axios --save-dev
+npm install cross-blob@2.x --save-dev
+npm install form-data@4.x --save-dev
 ```
 
 In order to compile the project and resolve the imports, you will need to enable the `allowSyntheticDefaultImports`
 in your `tsconfig.json` file.
 
-```json
-{
-    "allowSyntheticDefaultImports": true
-}
+
+### Node-Fetch support
+By default, this tool will generate a client that is compatible with the (browser based) Fetch API.
+However, this client will not work inside the Node.js environment. If you want to generate the Node.js compatible
+client then you can specify `--client node` in the openapi call:
+
+`openapi --input ./spec.json --output ./dist --client node`
+
+This will generate a client that uses [`node-fetch`](https://www.npmjs.com/package/node-fetch) internally. However,
+in order to compile and run this client, you might need to install the `node-fetch@2.x` dependencies.
+
+> Since version 3.x [`node-fetch`](https://www.npmjs.com/package/node-fetch) switched to ESM only,
+> breaking many CommonJS based toolchains (like Jest). Right now we do not support this new version!
+
 ```
+npm install @types/node-fetch@2.x --save-dev
+npm install abort-controller@3.x --save-dev
+npm install cross-blob@2.x --save-dev
+npm install form-data@4.x --save-dev
+npm install node-fetch@2.x --save-dev
+```
+
+In order to compile the project and resolve the imports, you will need to enable the `allowSyntheticDefaultImports`
+in your `tsconfig.json` file.
 
 
 [npm-url]: https://npmjs.org/package/openapi-typescript-codegen

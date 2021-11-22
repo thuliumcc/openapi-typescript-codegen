@@ -22,6 +22,8 @@ import { writeClientServices } from './writeClientServices';
  * @param exportServices: Generate services
  * @param exportModels: Generate models
  * @param exportSchemas: Generate schemas
+ * @param exportSchemas: Generate schemas
+ * @param postfix: Service name postfix
  * @param request: Path to custom request file
  */
 export async function writeClient(
@@ -35,6 +37,7 @@ export async function writeClient(
     exportServices: boolean,
     exportModels: boolean,
     exportSchemas: boolean,
+    postfix: string,
     request?: string
 ): Promise<void> {
     const outputPath = resolve(process.cwd(), output);
@@ -56,7 +59,15 @@ export async function writeClient(
     if (exportServices) {
         await rmdir(outputPathServices);
         await mkdir(outputPathServices);
-        await writeClientServices(client.services, templates, outputPathServices, httpClient, useUnionTypes, useOptions);
+        await writeClientServices(
+            client.services,
+            templates,
+            outputPathServices,
+            httpClient,
+            useUnionTypes,
+            useOptions,
+            postfix
+        );
     }
 
     if (exportSchemas) {
@@ -74,6 +85,16 @@ export async function writeClient(
     // We do not need index.ts
     /*if (exportCore || exportServices || exportSchemas || exportModels) {
         await mkdir(outputPath);
-        await writeClientIndex(client, templates, outputPath, useUnionTypes, exportCore, exportServices, exportModels, exportSchemas);
+        await writeClientIndex(
+            client,
+            templates,
+            outputPath,
+            useUnionTypes,
+            exportCore,
+            exportServices,
+            exportModels,
+            exportSchemas,
+            postfix
+        );
     }*/
 }

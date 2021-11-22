@@ -185,6 +185,7 @@ type Config = {
     BASE: string;
     VERSION: string;
     WITH_CREDENTIALS: boolean;
+    CREDENTIALS: 'include' | 'omit' | 'same-origin';
     TOKEN?: string | Resolver<string>;
     USERNAME?: string | Resolver<string>;
     PASSWORD?: string | Resolver<string>;
@@ -196,6 +197,7 @@ export const OpenAPI: Config = {
     BASE: 'http://localhost:3000/base',
     VERSION: '1.0',
     WITH_CREDENTIALS: false,
+    CREDENTIALS: 'include',
     TOKEN: undefined,
     USERNAME: undefined,
     PASSWORD: undefined,
@@ -276,12 +278,15 @@ function getFormData(options: ApiRequestOptions): FormData | undefined {
     if (options.formData) {
         const formData = new FormData();
 
-        Object.keys(options.formData).forEach(key => {
-            const value = options.formData?.[key];
-            if (isDefined(value)) {
-                formData.append(key, value);
-            }
-        });
+        Object.entries(options.formData)
+            .filter(([_, value]) => isDefined(value))
+            .forEach(([key, value]) => {
+                if (isString(value) || isBlob(value)) {
+                    formData.append(key, value);
+                } else {
+                    formData.append(key, JSON.stringify(value));
+                }
+            });
 
         return formData;
     }
@@ -311,8 +316,8 @@ async function getHeaders(options: ApiRequestOptions): Promise<Headers> {
         .filter(([_, value]) => isDefined(value))
         .reduce((headers, [key, value]) => ({
             ...headers,
-            [key]: value,
-        }), {});
+            [key]: String(value),
+        }), {} as Record<string, string>);
 
     const headers = new Headers(defaultHeaders);
 
@@ -371,7 +376,7 @@ async function sendRequest(
     };
 
     if (OpenAPI.WITH_CREDENTIALS) {
-        request.credentials = 'include';
+        request.credentials = OpenAPI.CREDENTIALS;
     }
 
     onCancel(() => controller.abort());
@@ -566,7 +571,11 @@ export { CollectionFormatService } from './services/CollectionFormatService';
 export { ComplexService } from './services/ComplexService';
 export { DefaultsService } from './services/DefaultsService';
 export { DuplicateService } from './services/DuplicateService';
+export { ErrorService } from './services/ErrorService';
 export { HeaderService } from './services/HeaderService';
+export { MultipleTags1Service } from './services/MultipleTags1Service';
+export { MultipleTags2Service } from './services/MultipleTags2Service';
+export { MultipleTags3Service } from './services/MultipleTags3Service';
 export { NoContentService } from './services/NoContentService';
 export { ParametersService } from './services/ParametersService';
 export { ResponseService } from './services/ResponseService';
@@ -811,7 +820,7 @@ import type { ModelWithString } from './ModelWithString';
 export type ModelThatExtends = (ModelWithString & {
     propExtendsA?: string;
     propExtendsB?: ModelWithString;
-} & any);
+});
 "
 `;
 
@@ -829,7 +838,7 @@ import type { ModelWithString } from './ModelWithString';
 export type ModelThatExtendsExtends = (ModelWithString & ModelThatExtends & {
     propExtendsC?: string;
     propExtendsD?: ModelWithString;
-} & any);
+});
 "
 `;
 
@@ -1273,7 +1282,7 @@ export const $ArrayWithArray = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ArrayWithBooleans.ts 1`] = `
@@ -1285,7 +1294,7 @@ export const $ArrayWithBooleans = {
     contains: {
         type: 'boolean',
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ArrayWithNumbers.ts 1`] = `
@@ -1297,7 +1306,7 @@ export const $ArrayWithNumbers = {
     contains: {
         type: 'number',
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ArrayWithProperties.ts 1`] = `
@@ -1316,7 +1325,7 @@ export const $ArrayWithProperties = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ArrayWithReferences.ts 1`] = `
@@ -1328,7 +1337,7 @@ export const $ArrayWithReferences = {
     contains: {
         type: 'ModelWithString',
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ArrayWithStrings.ts 1`] = `
@@ -1340,7 +1349,7 @@ export const $ArrayWithStrings = {
     contains: {
         type: 'string',
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$Date.ts 1`] = `
@@ -1349,7 +1358,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$Date.ts 1`] = `
 /* eslint-disable */
 export const $Date = {
     type: 'string',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$DictionaryWithArray.ts 1`] = `
@@ -1364,7 +1373,7 @@ export const $DictionaryWithArray = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$DictionaryWithDictionary.ts 1`] = `
@@ -1379,7 +1388,7 @@ export const $DictionaryWithDictionary = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$DictionaryWithProperties.ts 1`] = `
@@ -1398,7 +1407,7 @@ export const $DictionaryWithProperties = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$DictionaryWithReference.ts 1`] = `
@@ -1410,7 +1419,7 @@ export const $DictionaryWithReference = {
     contains: {
         type: 'ModelWithString',
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$DictionaryWithString.ts 1`] = `
@@ -1422,7 +1431,7 @@ export const $DictionaryWithString = {
     contains: {
         type: 'string',
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$EnumFromDescription.ts 1`] = `
@@ -1431,7 +1440,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$EnumFromDescription.ts
 /* eslint-disable */
 export const $EnumFromDescription = {
     type: 'number',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$EnumWithExtensions.ts 1`] = `
@@ -1440,7 +1449,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$EnumWithExtensions.ts 
 /* eslint-disable */
 export const $EnumWithExtensions = {
     type: 'Enum',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$EnumWithNumbers.ts 1`] = `
@@ -1449,7 +1458,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$EnumWithNumbers.ts 1`]
 /* eslint-disable */
 export const $EnumWithNumbers = {
     type: 'Enum',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$EnumWithStrings.ts 1`] = `
@@ -1458,7 +1467,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$EnumWithStrings.ts 1`]
 /* eslint-disable */
 export const $EnumWithStrings = {
     type: 'Enum',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelThatExtends.ts 1`] = `
@@ -1478,11 +1487,8 @@ export const $ModelThatExtends = {
                 type: 'ModelWithString',
             },
         },
-    }, {
-        properties: {
-        },
     }],
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelThatExtendsExtends.ts 1`] = `
@@ -1504,11 +1510,8 @@ export const $ModelThatExtendsExtends = {
                 type: 'ModelWithString',
             },
         },
-    }, {
-        properties: {
-        },
     }],
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithArray.ts 1`] = `
@@ -1526,7 +1529,7 @@ export const $ModelWithArray = {
         propWithFile: {
             type: 'array',
             contains: {
-                type: 'File',
+                type: 'binary',
             },
         },
         propWithNumber: {
@@ -1536,7 +1539,7 @@ export const $ModelWithArray = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithBoolean.ts 1`] = `
@@ -1549,7 +1552,7 @@ export const $ModelWithBoolean = {
             type: 'boolean',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithCircularReference.ts 1`] = `
@@ -1562,7 +1565,7 @@ export const $ModelWithCircularReference = {
             type: 'ModelWithCircularReference',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithDictionary.ts 1`] = `
@@ -1578,7 +1581,7 @@ export const $ModelWithDictionary = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithDuplicateImports.ts 1`] = `
@@ -1597,7 +1600,7 @@ export const $ModelWithDuplicateImports = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithDuplicateProperties.ts 1`] = `
@@ -1610,7 +1613,7 @@ export const $ModelWithDuplicateProperties = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithEnum.ts 1`] = `
@@ -1629,7 +1632,7 @@ export const $ModelWithEnum = {
             type: 'boolean',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithEnumFromDescription.ts 1`] = `
@@ -1642,7 +1645,7 @@ export const $ModelWithEnumFromDescription = {
             type: 'Enum',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithInteger.ts 1`] = `
@@ -1655,7 +1658,7 @@ export const $ModelWithInteger = {
             type: 'number',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithNestedEnums.ts 1`] = `
@@ -1689,7 +1692,7 @@ export const $ModelWithNestedEnums = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithNestedProperties.ts 1`] = `
@@ -1716,7 +1719,7 @@ export const $ModelWithNestedProperties = {
             isRequired: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithNullableString.ts 1`] = `
@@ -1735,7 +1738,7 @@ export const $ModelWithNullableString = {
             isNullable: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithOrderedProperties.ts 1`] = `
@@ -1754,7 +1757,7 @@ export const $ModelWithOrderedProperties = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithPattern.ts 1`] = `
@@ -1792,7 +1795,7 @@ export const $ModelWithPattern = {
             pattern: '^\\\\\\\\w+$',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithProperties.ts 1`] = `
@@ -1840,7 +1843,7 @@ export const $ModelWithProperties = {
             isReadOnly: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithReference.ts 1`] = `
@@ -1853,7 +1856,7 @@ export const $ModelWithReference = {
             type: 'ModelWithProperties',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$ModelWithString.ts 1`] = `
@@ -1866,7 +1869,7 @@ export const $ModelWithString = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$MultilineComment.ts 1`] = `
@@ -1875,7 +1878,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$MultilineComment.ts 1`
 /* eslint-disable */
 export const $MultilineComment = {
     type: 'number',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleBoolean.ts 1`] = `
@@ -1884,7 +1887,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleBoolean.ts 1`] =
 /* eslint-disable */
 export const $SimpleBoolean = {
     type: 'boolean',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleFile.ts 1`] = `
@@ -1892,8 +1895,8 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleFile.ts 1`] = `
 /* tslint:disable */
 /* eslint-disable */
 export const $SimpleFile = {
-    type: 'File',
-};"
+    type: 'binary',
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleInteger.ts 1`] = `
@@ -1902,7 +1905,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleInteger.ts 1`] =
 /* eslint-disable */
 export const $SimpleInteger = {
     type: 'number',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleReference.ts 1`] = `
@@ -1911,7 +1914,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleReference.ts 1`]
 /* eslint-disable */
 export const $SimpleReference = {
     type: 'ModelWithString',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleString.ts 1`] = `
@@ -1920,7 +1923,7 @@ exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleString.ts 1`] = 
 /* eslint-disable */
 export const $SimpleString = {
     type: 'string',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/schemas/$SimpleStringWithPattern.ts 1`] = `
@@ -1931,7 +1934,7 @@ export const $SimpleStringWithPattern = {
     type: 'string',
     maxLength: 64,
     pattern: '^[a-zA-Z0-9_]*$',
-};"
+} as const;"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/services/CollectionFormatService.ts 1`] = `
@@ -2111,12 +2114,12 @@ export class DefaultsService {
             method: 'PUT',
             path: \`/api/v\${OpenAPI.VERSION}/defaults\`,
             query: {
-                'parameterStringWithNoDefault': parameterStringWithNoDefault,
                 'parameterOptionalStringWithDefault': parameterOptionalStringWithDefault,
                 'parameterOptionalStringWithEmptyDefault': parameterOptionalStringWithEmptyDefault,
                 'parameterOptionalStringWithNoDefault': parameterOptionalStringWithNoDefault,
                 'parameterStringWithDefault': parameterStringWithDefault,
                 'parameterStringWithEmptyDefault': parameterStringWithEmptyDefault,
+                'parameterStringWithNoDefault': parameterStringWithNoDefault,
             },
         });
     }
@@ -2177,6 +2180,42 @@ export class DuplicateService {
 }"
 `;
 
+exports[`v2 should generate: ./test/generated/v2/services/ErrorService.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class ErrorService {
+
+    /**
+     * @param status Status code to return
+     * @returns any Custom message: Successful response
+     * @throws ApiError
+     */
+    public static testErrorCode(
+        status: string,
+    ): CancelablePromise<any> {
+        return __request({
+            method: 'POST',
+            path: \`/api/v\${OpenAPI.VERSION}/error\`,
+            query: {
+                'status': status,
+            },
+            errors: {
+                500: \`Custom message: Internal Server Error\`,
+                501: \`Custom message: Not Implemented\`,
+                502: \`Custom message: Bad Gateway\`,
+                503: \`Custom message: Service Unavailable\`,
+            },
+        });
+    }
+
+}"
+`;
+
 exports[`v2 should generate: ./test/generated/v2/services/HeaderService.ts 1`] = `
 "/* istanbul ignore file */
 /* tslint:disable */
@@ -2200,6 +2239,100 @@ export class HeaderService {
                 400: \`400 server error\`,
                 500: \`500 server error\`,
             },
+        });
+    }
+
+}"
+`;
+
+exports[`v2 should generate: ./test/generated/v2/services/MultipleTags1Service.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class MultipleTags1Service {
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyA(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/a\`,
+        });
+    }
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyB(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/b\`,
+        });
+    }
+
+}"
+`;
+
+exports[`v2 should generate: ./test/generated/v2/services/MultipleTags2Service.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class MultipleTags2Service {
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyA(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/a\`,
+        });
+    }
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyB(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/b\`,
+        });
+    }
+
+}"
+`;
+
+exports[`v2 should generate: ./test/generated/v2/services/MultipleTags3Service.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class MultipleTags3Service {
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyB(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/b\`,
         });
     }
 
@@ -2299,8 +2432,8 @@ export class ParametersService {
                 'parameter.header': parameterHeader,
             },
             query: {
-                'parameter-query': parameterQuery,
                 'default': _default,
+                'parameter-query': parameterQuery,
             },
             formData: {
                 'parameter_form': parameterForm,
@@ -2500,13 +2633,13 @@ export class TypesService {
             method: 'GET',
             path: \`/api/v\${OpenAPI.VERSION}/types\`,
             query: {
-                'parameterArray': parameterArray,
-                'parameterDictionary': parameterDictionary,
-                'parameterEnum': parameterEnum,
                 'parameterNumber': parameterNumber,
                 'parameterString': parameterString,
                 'parameterBoolean': parameterBoolean,
                 'parameterObject': parameterObject,
+                'parameterArray': parameterArray,
+                'parameterDictionary': parameterDictionary,
+                'parameterEnum': parameterEnum,
             },
         });
     }
@@ -2699,6 +2832,7 @@ type Config = {
     BASE: string;
     VERSION: string;
     WITH_CREDENTIALS: boolean;
+    CREDENTIALS: 'include' | 'omit' | 'same-origin';
     TOKEN?: string | Resolver<string>;
     USERNAME?: string | Resolver<string>;
     PASSWORD?: string | Resolver<string>;
@@ -2710,6 +2844,7 @@ export const OpenAPI: Config = {
     BASE: 'http://localhost:3000/base',
     VERSION: '1.0',
     WITH_CREDENTIALS: false,
+    CREDENTIALS: 'include',
     TOKEN: undefined,
     USERNAME: undefined,
     PASSWORD: undefined,
@@ -2790,12 +2925,15 @@ function getFormData(options: ApiRequestOptions): FormData | undefined {
     if (options.formData) {
         const formData = new FormData();
 
-        Object.keys(options.formData).forEach(key => {
-            const value = options.formData?.[key];
-            if (isDefined(value)) {
-                formData.append(key, value);
-            }
-        });
+        Object.entries(options.formData)
+            .filter(([_, value]) => isDefined(value))
+            .forEach(([key, value]) => {
+                if (isString(value) || isBlob(value)) {
+                    formData.append(key, value);
+                } else {
+                    formData.append(key, JSON.stringify(value));
+                }
+            });
 
         return formData;
     }
@@ -2825,8 +2963,8 @@ async function getHeaders(options: ApiRequestOptions): Promise<Headers> {
         .filter(([_, value]) => isDefined(value))
         .reduce((headers, [key, value]) => ({
             ...headers,
-            [key]: value,
-        }), {});
+            [key]: String(value),
+        }), {} as Record<string, string>);
 
     const headers = new Headers(defaultHeaders);
 
@@ -2885,7 +3023,7 @@ async function sendRequest(
     };
 
     if (OpenAPI.WITH_CREDENTIALS) {
-        request.credentials = 'include';
+        request.credentials = OpenAPI.CREDENTIALS;
     }
 
     onCancel(() => controller.abort());
@@ -3096,8 +3234,13 @@ export { CollectionFormatService } from './services/CollectionFormatService';
 export { ComplexService } from './services/ComplexService';
 export { DefaultsService } from './services/DefaultsService';
 export { DuplicateService } from './services/DuplicateService';
+export { ErrorService } from './services/ErrorService';
+export { FormDataService } from './services/FormDataService';
 export { HeaderService } from './services/HeaderService';
 export { MultipartService } from './services/MultipartService';
+export { MultipleTags1Service } from './services/MultipleTags1Service';
+export { MultipleTags2Service } from './services/MultipleTags2Service';
+export { MultipleTags3Service } from './services/MultipleTags3Service';
 export { NoContentService } from './services/NoContentService';
 export { ParametersService } from './services/ParametersService';
 export { RequestBodyService } from './services/RequestBodyService';
@@ -3967,7 +4110,7 @@ export const $ArrayWithArray = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ArrayWithBooleans.ts 1`] = `
@@ -3979,7 +4122,7 @@ export const $ArrayWithBooleans = {
     contains: {
         type: 'boolean',
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ArrayWithNumbers.ts 1`] = `
@@ -3991,7 +4134,7 @@ export const $ArrayWithNumbers = {
     contains: {
         type: 'number',
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ArrayWithProperties.ts 1`] = `
@@ -4010,7 +4153,7 @@ export const $ArrayWithProperties = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ArrayWithReferences.ts 1`] = `
@@ -4022,7 +4165,7 @@ export const $ArrayWithReferences = {
     contains: {
         type: 'ModelWithString',
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ArrayWithStrings.ts 1`] = `
@@ -4034,7 +4177,7 @@ export const $ArrayWithStrings = {
     contains: {
         type: 'string',
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionBaseModel.ts 1`] = `
@@ -4050,7 +4193,7 @@ export const $CompositionBaseModel = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionExtendedModel.ts 1`] = `
@@ -4077,7 +4220,7 @@ export const $CompositionExtendedModel = {
             },
         },
     }],
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithAllOfAndNullable.ts 1`] = `
@@ -4104,7 +4247,7 @@ export const $CompositionWithAllOfAndNullable = {
             isNullable: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithAnyOf.ts 1`] = `
@@ -4126,7 +4269,7 @@ export const $CompositionWithAnyOf = {
             }],
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithAnyOfAndNullable.ts 1`] = `
@@ -4153,7 +4296,7 @@ export const $CompositionWithAnyOfAndNullable = {
             isNullable: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithAnyOfAnonymous.ts 1`] = `
@@ -4177,7 +4320,7 @@ export const $CompositionWithAnyOfAnonymous = {
             }],
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithOneOf.ts 1`] = `
@@ -4199,7 +4342,7 @@ export const $CompositionWithOneOf = {
             }],
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithOneOfAndNullable.ts 1`] = `
@@ -4226,7 +4369,7 @@ export const $CompositionWithOneOfAndNullable = {
             isNullable: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$CompositionWithOneOfAnonymous.ts 1`] = `
@@ -4250,7 +4393,7 @@ export const $CompositionWithOneOfAnonymous = {
             }],
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$DictionaryWithArray.ts 1`] = `
@@ -4265,7 +4408,7 @@ export const $DictionaryWithArray = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$DictionaryWithDictionary.ts 1`] = `
@@ -4280,7 +4423,7 @@ export const $DictionaryWithDictionary = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$DictionaryWithProperties.ts 1`] = `
@@ -4299,7 +4442,7 @@ export const $DictionaryWithProperties = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$DictionaryWithReference.ts 1`] = `
@@ -4311,7 +4454,7 @@ export const $DictionaryWithReference = {
     contains: {
         type: 'ModelWithString',
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$DictionaryWithString.ts 1`] = `
@@ -4323,7 +4466,7 @@ export const $DictionaryWithString = {
     contains: {
         type: 'string',
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$EnumFromDescription.ts 1`] = `
@@ -4332,7 +4475,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$EnumFromDescription.ts
 /* eslint-disable */
 export const $EnumFromDescription = {
     type: 'number',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$EnumWithExtensions.ts 1`] = `
@@ -4341,7 +4484,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$EnumWithExtensions.ts 
 /* eslint-disable */
 export const $EnumWithExtensions = {
     type: 'Enum',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$EnumWithNumbers.ts 1`] = `
@@ -4350,7 +4493,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$EnumWithNumbers.ts 1`]
 /* eslint-disable */
 export const $EnumWithNumbers = {
     type: 'Enum',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$EnumWithStrings.ts 1`] = `
@@ -4359,7 +4502,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$EnumWithStrings.ts 1`]
 /* eslint-disable */
 export const $EnumWithStrings = {
     type: 'Enum',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelThatExtends.ts 1`] = `
@@ -4380,7 +4523,7 @@ export const $ModelThatExtends = {
             },
         },
     }],
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelThatExtendsExtends.ts 1`] = `
@@ -4403,7 +4546,7 @@ export const $ModelThatExtendsExtends = {
             },
         },
     }],
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithArray.ts 1`] = `
@@ -4421,7 +4564,7 @@ export const $ModelWithArray = {
         propWithFile: {
             type: 'array',
             contains: {
-                type: 'File',
+                type: 'binary',
             },
         },
         propWithNumber: {
@@ -4431,7 +4574,7 @@ export const $ModelWithArray = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithBoolean.ts 1`] = `
@@ -4444,7 +4587,7 @@ export const $ModelWithBoolean = {
             type: 'boolean',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithCircularReference.ts 1`] = `
@@ -4457,7 +4600,7 @@ export const $ModelWithCircularReference = {
             type: 'ModelWithCircularReference',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithDictionary.ts 1`] = `
@@ -4473,7 +4616,7 @@ export const $ModelWithDictionary = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithDuplicateImports.ts 1`] = `
@@ -4492,7 +4635,7 @@ export const $ModelWithDuplicateImports = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithDuplicateProperties.ts 1`] = `
@@ -4505,7 +4648,7 @@ export const $ModelWithDuplicateProperties = {
             type: 'ModelWithString',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithEnum.ts 1`] = `
@@ -4524,7 +4667,7 @@ export const $ModelWithEnum = {
             type: 'boolean',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithEnumFromDescription.ts 1`] = `
@@ -4537,7 +4680,7 @@ export const $ModelWithEnumFromDescription = {
             type: 'Enum',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithInteger.ts 1`] = `
@@ -4550,7 +4693,7 @@ export const $ModelWithInteger = {
             type: 'number',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithNestedEnums.ts 1`] = `
@@ -4584,7 +4727,7 @@ export const $ModelWithNestedEnums = {
             },
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithNestedProperties.ts 1`] = `
@@ -4614,7 +4757,7 @@ export const $ModelWithNestedProperties = {
             isNullable: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithNullableString.ts 1`] = `
@@ -4642,7 +4785,7 @@ export const $ModelWithNullableString = {
             isNullable: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithOrderedProperties.ts 1`] = `
@@ -4661,7 +4804,7 @@ export const $ModelWithOrderedProperties = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithPattern.ts 1`] = `
@@ -4699,7 +4842,7 @@ export const $ModelWithPattern = {
             pattern: '^\\\\\\\\w+$',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithProperties.ts 1`] = `
@@ -4752,7 +4895,7 @@ export const $ModelWithProperties = {
             isReadOnly: true,
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithReference.ts 1`] = `
@@ -4765,7 +4908,7 @@ export const $ModelWithReference = {
             type: 'ModelWithProperties',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$ModelWithString.ts 1`] = `
@@ -4778,7 +4921,7 @@ export const $ModelWithString = {
             type: 'string',
         },
     },
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$MultilineComment.ts 1`] = `
@@ -4787,7 +4930,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$MultilineComment.ts 1`
 /* eslint-disable */
 export const $MultilineComment = {
     type: 'number',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleBoolean.ts 1`] = `
@@ -4796,7 +4939,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleBoolean.ts 1`] =
 /* eslint-disable */
 export const $SimpleBoolean = {
     type: 'boolean',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleFile.ts 1`] = `
@@ -4804,8 +4947,8 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleFile.ts 1`] = `
 /* tslint:disable */
 /* eslint-disable */
 export const $SimpleFile = {
-    type: 'File',
-};"
+    type: 'binary',
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleInteger.ts 1`] = `
@@ -4814,7 +4957,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleInteger.ts 1`] =
 /* eslint-disable */
 export const $SimpleInteger = {
     type: 'number',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleReference.ts 1`] = `
@@ -4823,7 +4966,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleReference.ts 1`]
 /* eslint-disable */
 export const $SimpleReference = {
     type: 'ModelWithString',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleString.ts 1`] = `
@@ -4832,7 +4975,7 @@ exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleString.ts 1`] = 
 /* eslint-disable */
 export const $SimpleString = {
     type: 'string',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/schemas/$SimpleStringWithPattern.ts 1`] = `
@@ -4843,7 +4986,7 @@ export const $SimpleStringWithPattern = {
     type: 'string',
     maxLength: 64,
     pattern: '^[a-zA-Z0-9_]*$',
-};"
+} as const;"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/services/CollectionFormatService.ts 1`] = `
@@ -5056,12 +5199,12 @@ export class DefaultsService {
             method: 'PUT',
             path: \`/api/v\${OpenAPI.VERSION}/defaults\`,
             query: {
-                'parameterStringWithNoDefault': parameterStringWithNoDefault,
                 'parameterOptionalStringWithDefault': parameterOptionalStringWithDefault,
                 'parameterOptionalStringWithEmptyDefault': parameterOptionalStringWithEmptyDefault,
                 'parameterOptionalStringWithNoDefault': parameterOptionalStringWithNoDefault,
                 'parameterStringWithDefault': parameterStringWithDefault,
                 'parameterStringWithEmptyDefault': parameterStringWithEmptyDefault,
+                'parameterStringWithNoDefault': parameterStringWithNoDefault,
             },
         });
     }
@@ -5122,6 +5265,76 @@ export class DuplicateService {
 }"
 `;
 
+exports[`v3 should generate: ./test/generated/v3/services/ErrorService.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class ErrorService {
+
+    /**
+     * @param status Status code to return
+     * @returns any Custom message: Successful response
+     * @throws ApiError
+     */
+    public static testErrorCode(
+        status: number,
+    ): CancelablePromise<any> {
+        return __request({
+            method: 'POST',
+            path: \`/api/v\${OpenAPI.VERSION}/error\`,
+            query: {
+                'status': status,
+            },
+            errors: {
+                500: \`Custom message: Internal Server Error\`,
+                501: \`Custom message: Not Implemented\`,
+                502: \`Custom message: Bad Gateway\`,
+                503: \`Custom message: Service Unavailable\`,
+            },
+        });
+    }
+
+}"
+`;
+
+exports[`v3 should generate: ./test/generated/v3/services/FormDataService.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ModelWithString } from '../models/ModelWithString';
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class FormDataService {
+
+    /**
+     * @param parameter This is a reusable parameter
+     * @param formData A reusable request body
+     * @throws ApiError
+     */
+    public static postFormData(
+        parameter?: string,
+        formData?: ModelWithString,
+    ): CancelablePromise<void> {
+        return __request({
+            method: 'POST',
+            path: \`/api/v\${OpenAPI.VERSION}/formData/\`,
+            query: {
+                'parameter': parameter,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+        });
+    }
+
+}"
+`;
+
 exports[`v3 should generate: ./test/generated/v3/services/HeaderService.ts 1`] = `
 "/* istanbul ignore file */
 /* tslint:disable */
@@ -5155,6 +5368,7 @@ exports[`v3 should generate: ./test/generated/v3/services/MultipartService.ts 1`
 "/* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ModelWithString } from '../models/ModelWithString';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { request as __request } from '../core/request';
 import { OpenAPI } from '../core/OpenAPI';
@@ -5162,11 +5376,29 @@ import { OpenAPI } from '../core/OpenAPI';
 export class MultipartService {
 
     /**
+     * @param formData
+     * @throws ApiError
+     */
+    public static multipartRequest(
+        formData?: {
+            content?: Blob;
+            data?: ModelWithString | null;
+        },
+    ): CancelablePromise<void> {
+        return __request({
+            method: 'POST',
+            path: \`/api/v\${OpenAPI.VERSION}/multipart\`,
+            formData: formData,
+            mediaType: 'multipart/form-data',
+        });
+    }
+
+    /**
      * @returns any OK
      * @throws ApiError
      */
     public static multipartResponse(): CancelablePromise<{
-        file?: string;
+        file?: Blob;
         metadata?: {
             foo?: string;
             bar?: string;
@@ -5175,6 +5407,100 @@ export class MultipartService {
         return __request({
             method: 'GET',
             path: \`/api/v\${OpenAPI.VERSION}/multipart\`,
+        });
+    }
+
+}"
+`;
+
+exports[`v3 should generate: ./test/generated/v3/services/MultipleTags1Service.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class MultipleTags1Service {
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyA(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/a\`,
+        });
+    }
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyB(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/b\`,
+        });
+    }
+
+}"
+`;
+
+exports[`v3 should generate: ./test/generated/v3/services/MultipleTags2Service.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class MultipleTags2Service {
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyA(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/a\`,
+        });
+    }
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyB(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/b\`,
+        });
+    }
+
+}"
+`;
+
+exports[`v3 should generate: ./test/generated/v3/services/MultipleTags3Service.ts 1`] = `
+"/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { request as __request } from '../core/request';
+import { OpenAPI } from '../core/OpenAPI';
+
+export class MultipleTags3Service {
+
+    /**
+     * @returns void
+     * @throws ApiError
+     */
+    public static dummyB(): CancelablePromise<void> {
+        return __request({
+            method: 'GET',
+            path: \`/api/v\${OpenAPI.VERSION}/multiple-tags/b\`,
         });
     }
 
@@ -5286,8 +5612,8 @@ export class ParametersService {
                 'parameter.header': parameterHeader,
             },
             query: {
-                'parameter-query': parameterQuery,
                 'default': _default,
+                'parameter-query': parameterQuery,
             },
             formData: {
                 'parameter_form': parameterForm,
@@ -5352,15 +5678,20 @@ import { OpenAPI } from '../core/OpenAPI';
 export class RequestBodyService {
 
     /**
+     * @param parameter This is a reusable parameter
      * @param requestBody A reusable request body
      * @throws ApiError
      */
-    public static postRequestBodyService(
+    public static postRequestBody(
+        parameter?: string,
         requestBody?: ModelWithString,
     ): CancelablePromise<void> {
         return __request({
             method: 'POST',
             path: \`/api/v\${OpenAPI.VERSION}/requestBody/\`,
+            query: {
+                'parameter': parameter,
+            },
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -5557,13 +5888,13 @@ export class TypesService {
             method: 'GET',
             path: \`/api/v\${OpenAPI.VERSION}/types\`,
             query: {
-                'parameterArray': parameterArray,
-                'parameterDictionary': parameterDictionary,
-                'parameterEnum': parameterEnum,
                 'parameterNumber': parameterNumber,
                 'parameterString': parameterString,
                 'parameterBoolean': parameterBoolean,
                 'parameterObject': parameterObject,
+                'parameterArray': parameterArray,
+                'parameterDictionary': parameterDictionary,
+                'parameterEnum': parameterEnum,
             },
         });
     }
